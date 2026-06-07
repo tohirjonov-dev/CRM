@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: apparel_user
+      POSTGRES_PASSWORD: apparel_password
+      POSTGRES_DB: apparel_cloud
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apparel_user -d apparel_cloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://apparel_user:apparel_password@postgres:5432/apparel_cloud
+      SECRET_KEY: e8f96bc8e6cd7c0e5a95b871c504bd9feab8d7c67bf309adbd500473a216db8c
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 120
+      CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=https://crm.study-track.uz
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
