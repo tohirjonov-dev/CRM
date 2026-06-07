@@ -119,6 +119,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: Copy repository to remote server
         uses: appleboy/scp-action@v0.1.5
         with:
@@ -128,6 +135,7 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           source: "docker-compose.yml,nginx.conf,certs"
           target: "/home/${{ secrets.USERNAME }}/ApparelCloud"
+          timeout: 30s
 
       - name: Deploy on remote server
         uses: appleboy/ssh-action@v1.2.0
@@ -136,6 +144,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
+          timeout: 30s
           script: |
             mkdir -p ~/ApparelCloud
             cd ~/ApparelCloud
