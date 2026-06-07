@@ -36,7 +36,7 @@ services:
       - backend
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certs:/etc/letsencrypt/live/hamidulloh.duckdns.org:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
 volumes:
   postgres_data:
