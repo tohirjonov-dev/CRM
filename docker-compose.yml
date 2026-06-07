@@ -17,16 +17,26 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  backend1:
     build: ./backend
-    ports:
-      - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://apparel_user:apparel_password@postgres:5432/apparel_cloud
       SECRET_KEY: e8f96bc8e6cd7c0e5a95b871c504bd9feab8d7c67bf309adbd500473a216db8c
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 120
-      CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+      CORS_ORIGINS: "https://hamidulloh.duckdns.org"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend2:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://apparel_user:apparel_password@postgres:5432/apparel_cloud
+      SECRET_KEY: e8f96bc8e6cd7c0e5a95b871c504bd9feab8d7c67bf309adbd500473a216db8c
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 120
+      CORS_ORIGINS: "https://hamidulloh.duckdns.org"
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,11 +44,15 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
     environment:
-      - VITE_API_URL=https://crm.study-track.uz
+      - VITE_API_URL=https://hamidulloh.duckdns.org
     depends_on:
-      - backend
+      - backend1
+      - backend2
+    volumes:
+      - ./certs:/etc/letsencrypt/live/hamidulloh.duckdns.org:ro
 
 volumes:
   postgres_data:
