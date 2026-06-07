@@ -122,10 +122,16 @@ jobs:
       - name: Decode SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY_BASE64 }}" | base64 -d > ~/.ssh/deploy_key
+          # Try base64 decode first
+          echo "${{ secrets.SSH_KEY_BASE64 }}" | base64 -d > ~/.ssh/deploy_key 2>/dev/null || {
+            # If decode fails, use raw SSH key
+            echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+          }
           chmod 600 ~/.ssh/deploy_key
-          echo "SSH key info:"
+          echo "SSH key file type:"
           file ~/.ssh/deploy_key
+          echo "SSH key first line:"
+          head -1 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Copy files via SSH
