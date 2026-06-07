@@ -119,20 +119,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Decode SSH key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          # Try base64 decode first
-          echo "${{ secrets.SSH_KEY_BASE64 }}" | base64 -d > ~/.ssh/deploy_key 2>/dev/null || {
-            # If decode fails, use raw SSH key
-            echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
-          }
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          echo "SSH key file type:"
-          file ~/.ssh/deploy_key
-          echo "SSH key first line:"
-          head -1 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -p ${{ secrets.SSH_PORT || 22 }} -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Copy files via SSH
         run: |
