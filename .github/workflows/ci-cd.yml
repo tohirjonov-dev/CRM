@@ -7,8 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_BACKEND: ghcr.io/gammbity/crm/backend
-  IMAGE_NAME_FRONTEND: ghcr.io/gammbity/crm/frontend
+  IMAGE_NAME_BACKEND: ghcr.io/tohirjonov-dev/crm/backend
+  IMAGE_NAME_FRONTEND: ghcr.io/tohirjonov-dev/crm/frontend
 
 jobs:
   build:
