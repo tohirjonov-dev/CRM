@@ -7,9 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
-  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
-  IMAGE_NAME_NGINX: ${{ github.repository }}/nginx
+  IMAGE_NAME_BACKEND: ghcr.io/tohirjonov-dev/crm/backend
+  IMAGE_NAME_FRONTEND: ghcr.io/tohirjonov-dev/crm/frontend
 
 jobs:
   build:
@@ -69,45 +68,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for backend
-        id: meta-backend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=semver,pattern={{version}}
-            latest
-
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+          tags: ${{ env.IMAGE_NAME_BACKEND }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Extract metadata for frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=semver,pattern={{version}}
-            latest
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ env.IMAGE_NAME_FRONTEND }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -119,20 +94,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Decode SSH key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          # Try base64 decode first
-          echo "${{ secrets.SSH_KEY_BASE64 }}" | base64 -d > ~/.ssh/deploy_key 2>/dev/null || {
-            # If decode fails, use raw SSH key
-            echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
-          }
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          echo "SSH key file type:"
-          file ~/.ssh/deploy_key
-          echo "SSH key first line:"
-          head -1 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -p ${{ secrets.SSH_PORT || 22 }} -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Copy files via SSH
         run: |
@@ -143,11 +110,12 @@ jobs:
       - name: Deploy on remote server
         run: |
           ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT || 22 }} -o StrictHostKeyChecking=no \
-            ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+            ${{ secrets.USERNAME }}@${{ secrets.HOST }} bash << 'ENDSSH'
+            set -e
             mkdir -p ~/ApparelCloud
             cd ~/ApparelCloud
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin ${{ env.REGISTRY }}
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose pull
             docker compose down || true
             docker compose up -d
-          EOF
+          ENDSSH
