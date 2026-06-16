@@ -62,7 +62,7 @@ const Clients: React.FC = () => {
       {/* Top Header Row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">B3B mijozlar (CRM)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">B5B mijozlar (CRM)</h1>
           <p className="text-xs text-gray-400 mt-0.5">Prosta mijozlar, xaridorlar va aloqa ma&apos;lumotlari</p>
         </div>
         <button
