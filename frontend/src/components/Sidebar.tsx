@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, user, onLogout }) 
               <Cloud size={20} className="text-black" />
             </div>
             <span className="text-lg font-bold tracking-wider bg-gradient-to-r from-white via-white to-gold-400 bg-clip-text text-transparent">
-              ApparelCloud
+              Retake
             </span>
           </div>
           <button 
